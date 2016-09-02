@@ -1,14 +1,13 @@
 #!/bin/bash
 
 # Node List
-PRE_LIST=(bi@10.144.18.120)
-ROLLBACK_LIST="bi@10.144.18.120"
+PRE_LIST=(lx@192.168.56.11)
+ROLLBACK_LIST="lx@192.168.56.11"
 
 # Date/Time Veriables
 LOG_DATE='date "+%Y-%m-%d"'
 LOG_TIME='date "+%H-%M-%S"'
 CTIME=$(date "+%Y-%m-%d")-$(date "+%H-%M-%S")
-
 
 # Shell Env
 SHELL_DIR="/data/command"
