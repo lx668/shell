@@ -9,4 +9,4 @@
 使用方法：
 sh deploy_all.sh deploy chaos bi-test  代码部署
 sh deploy_all.sh rollback chaos bi-test 代码回滚上一个版本
-sh deploy_all.sh rollback chaos bi-test-2016-09-02-12-03-56
+sh deploy_all.sh rollback chaos bi-test-2016-09-02-12-03-56  回滚到任何一版本
