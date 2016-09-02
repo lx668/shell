@@ -1,14 +1,14 @@
 #!/bin/bash
-# auth: lx
-# ctime: 2016-09-02
+
 # Node List
-PRE_LIST=(lx@192.168.56.11)
-ROLLBACK_LIST="lx@192.168.56.11"
+PRE_LIST=(bi@10.144.18.120)
+ROLLBACK_LIST="bi@10.144.18.120"
 
 # Date/Time Veriables
 LOG_DATE='date "+%Y-%m-%d"'
 LOG_TIME='date "+%H-%M-%S"'
 CTIME=$(date "+%Y-%m-%d")-$(date "+%H-%M-%S")
+
 
 # Shell Env
 SHELL_DIR="/data/command"
@@ -16,12 +16,14 @@ SHELL_NAME="deploy_all.sh"
 SHELL_LOG="${SHELL_DIR}/${SHELL_NAME}.log"
 
 # Code Env
-WAR_NAME="bi-sts-1.0.0.war"
-CODE_DIR="/data/code/chaos"
+WAR_NAME="$3-1.0.0.war"
+echo $WAR_NAME
+CODE_DIR="/data/code/"
+#CODE_DIR="/data/code/chaos"
 LOCK_FILE="/tmp/deploy.lock"
 
 usage(){
-	echo $"Usage: $0 {deploy | rollback [ list | version ]"
+	echo $"Usage: $0 {deploy project | rollback project [ list | version ]"
 }
 
 writelog(){
@@ -39,49 +41,50 @@ shell_unlock(){
 
 code_get(){
 	writelog "code_get"; 
-	cd $CODE_DIR && git pull && mvn clean install
-	PRO_NAME=`find $CODE_DIR/ -name "$WAR_NAME"`
+	cd $CODE_DIR/$1 && git pull && mvn clean install
+	PRO_NAME=`find $CODE_DIR/$1 -name "$WAR_NAME"`
 }
 
 
 code_scp(){
 	writelog "code_scp"
 	for node in $PRE_LIST;do
-		ssh $node "mkdir /opt/webroot/bi-sts$CTIME"
-		scp $PRO_NAME $node:/opt/webroot/bi-sts$CTIME
+		ssh $node "mkdir -p /opt/webroot/$1/$2$CTIME"
+		scp $PRO_NAME $node:/opt/webroot/$1/$2$CTIME
 	done
 }
 
 pre_deploy(){
 	writelog "remove from cluster"
-        ssh $PRE_LIST "cd /opt/webroot/bi-sts$CTIME && jar xf $WAR_NAME"
-	ssh $PRE_LIST "cd /opt/webroot/bi-sts$CTIME && rm -f $WAR_NAME"
-        ssh $PRE_LIST "rm -f /data/services/tomcat-chaos/webapps/ROOT && ln -s /opt/webroot/bi-sts$CTIME /data/services/tomcat-chaos/webapps/ROOT"
-	ssh $PRE_LIST "sh /data/services/tomcat-chaos/bin/restart.sh"
+        ssh $PRE_LIST "cd /opt/webroot/$1/$2$CTIME && jar xf $WAR_NAME"
+	ssh $PRE_LIST "cd /opt/webroot/$1/$2$CTIME && rm -f $WAR_NAME"
+        ssh $PRE_LIST "rm -f /data/services/tomcat-$2/webapps/ROOT && ln -s /opt/webroot/$1/$2$CTIME /data/services/tomcat-$2/webapps/ROOT"
+	ssh $PRE_LIST "sh /data/services/tomcat-$2/bin/restart.sh"
 }
 
 
 rollback_fun(){
 	for node in $ROLLBACK_LIST;do
-		ssh $node "rm -f /data/services/tomcat-chaos/webapps/ROOT && ln -s /opt/webroot/$1 /data/services/tomcat-chaos/webapps/ROOT"
-		ssh $PRE_LIST "sh /data/services/tomcat-chaos/bin/restart.sh"
+		ssh $node "rm -f /data/services/tomcat-$2/webapps/ROOT && ln -s /opt/webroot/$1/$3 /data/services/tomcat-$2/webapps/ROOT"
+		ssh $PRE_LIST "sh /data/services/tomcat-$2/bin/restart.sh"
     	done
 }
 
 rollback(){
-	if [ -z $1 ];then
+	if [ -z $3 ];then
    		shell_unlock;		
-		Last_version=`ssh bi@10.144.18.120 "ls -lrtd /opt/webroot/bi-sts2016*|tail -2|head -1"|awk -F "[ /]+" '{print $NF}'`
+		Last_version=`ssh bi@10.144.18.120 "ls -lrtd /opt/webroot/$1/$2*|tail -2|head -1"|awk -F "[ /]+" '{print $NF}'`
     		#echo "Please input rollback version" && exit;
 		echo $Last_version
-		rollback_fun $Last_version
+		echo "===================================================================================="
+		rollback_fun $1 $2 $Last_version
 	else
 		case $1 in
         	list)
-			ssh $PRE_LIST "ls -ld /opt/webroot/bi-sts*"
+			ssh $PRE_LIST "ls -ld /opt/webroot/$1/$2*"
 		;;
 		*)
-			rollback_fun $1
+			rollback_fun $1 $3
     	esac
 	fi
 }
@@ -91,22 +94,24 @@ main(){
 	echo "Deploy is running" && exit;
    fi
     DEPLOY_METHOD=$1
-    ROLLBACK_VER=$2
+    PROJECT_NAME=$2
+    DIR_NAME=$3
+    ROLLBACK_VER=$4
     case $DEPLOY_METHOD in
        deploy)
 		shell_lock;
-		code_get;
-		code_scp;
-		pre_deploy;
+		code_get $PROJECT_NAME;
+		code_scp $PROJECT_NAME $DIR_NAME;
+		pre_deploy $PROJECT_NAME $DIR_NAME;
 		shell_unlock;
 		;;
 	rollback)
 		shell_lock;
-		rollback $ROLLBACK_VER;
+		rollback $PROJECT_NAME $DIR_NAME $ROLLBACK_VER;
 		shell_unlock;
 		;;
 	*)
 		usage;
     esac
 }
-main $1 $2
+main $1 $2 $3 $4
