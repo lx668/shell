@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Node List
-PRE_LIST=(bi@10.144.18.120)
-ROLLBACK_LIST="bi@10.144.18.120"
+PRE_LIST=(lx@192.168.56.11)
+ROLLBACK_LIST="lx@192.168.56.11"
 
 # Date/Time Veriables
 LOG_DATE='date "+%Y-%m-%d"'
@@ -73,7 +73,7 @@ rollback_fun(){
 rollback(){
 	if [ -z $3 ];then
    		shell_unlock;		
-		Last_version=`ssh bi@10.144.18.120 "ls -lrtd /opt/webroot/$1/$2*|tail -2|head -1"|awk -F "[ /]+" '{print $NF}'`
+		Last_version=`lx@192.168.56.11 "ls -lrtd /opt/webroot/$1/$2*|tail -2|head -1"|awk -F "[ /]+" '{print $NF}'`
     		#echo "Please input rollback version" && exit;
 		echo $Last_version
 		echo "===================================================================================="
