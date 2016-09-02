@@ -1,5 +1,6 @@
 #!/bin/bash
-
+# auth: lx
+# ctime: 2016-09-02
 # Node List
 PRE_LIST=(lx@192.168.56.11)
 ROLLBACK_LIST="lx@192.168.56.11"
